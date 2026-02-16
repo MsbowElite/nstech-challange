@@ -1,0 +1,107 @@
+############################
+# .NET / C#
+############################
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.cache
+*.dll
+*.exe
+*.pdb
+*.mdb
+*.log
+
+############################
+# Visual Studio
+############################
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+############################
+# VS Code + Dev Containers
+############################
+.devcontainer/.env
+.devcontainer/docker-compose.override.yml
+
+############################
+# JetBrains / Rider (just in case)
+############################
+.idea/
+*.iml
+
+############################
+# OS
+############################
+.DS_Store
+Thumbs.db
+
+############################
+# Docker
+############################
+docker-compose.override.yml
+**/docker-compose.override.yml
+*.dockerfile.user
+
+############################
+# PostgreSQL / Local data
+############################
+postgres-data/
+pgdata/
+*.sql
+*.dump
+
+############################
+# Environment variables
+############################
+.env
+.env.*
+!env.example
+
+############################
+# ASP.NET Core
+############################
+appsettings.Development.json
+appsettings.Local.json
+appsettings.*.local.json
+
+############################
+# Secrets
+############################
+secrets.json
+secrets/
+*.key
+*.pem
+*.crt
+
+############################
+# Test Results
+############################
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+############################
+# Logs
+############################
+logs/
+*.log
+
+############################
+# GitHub Copilot
+############################
+.copilot/
+.github/copilot/
+copilot-chat.md
+
+############################
+# Codespaces
+############################
+.codespaces/
