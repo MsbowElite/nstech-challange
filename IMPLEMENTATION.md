@@ -3,9 +3,9 @@
 [![.NET 8.0](https://img.shields.io/badge/.NET-8.0-blue)](https://dotnet.microsoft.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue)](https://www.docker.com/)
-[![Tests](https://img.shields.io/badge/Tests-17%20Passing-green)](https://github.com/xunit/xunit)
+[![Tests](https://img.shields.io/badge/Tests-17%20Passing-green)](https://nunit.org/)
 
-> **API REST para gestão de Pedidos** com validação de estoque, autenticação JWT e arquitetura limpa.
+> **API REST para gestão de Pedidos** com validação de estoque, autenticação JWT, Minimal API e arquitetura limpa.
 
 ## 📋 Índice
 
@@ -22,15 +22,17 @@
 ## 🎯 Visão Geral
 
 Este projeto implementa uma API REST completa para gestão de pedidos com:
-- ✅ Clean Architecture (Domain, Application, Infrastructure, API)
+- ✅ Clean Architecture (Domain, Application, Infrastructure, API) em `src/`
+- ✅ **Minimal API** (seguindo instruções específicas)
 - ✅ CQRS com MediatR
 - ✅ Validação de estoque em duas fases
 - ✅ Operações idempotentes (Confirm/Cancel)
 - ✅ Autenticação JWT
+- ✅ **Correlation ID** para rastreamento de requisições
 - ✅ PostgreSQL com EF Core
 - ✅ Migrations automáticas
 - ✅ Docker Compose pronto para uso
-- ✅ 17 testes unitários passando
+- ✅ 17 testes unitários passando com **NUnit**
 - ✅ Swagger/OpenAPI completo
 
 ---
@@ -38,12 +40,12 @@ Este projeto implementa uma API REST completa para gestão de pedidos com:
 ## 🛠 Tecnologias Utilizadas
 
 - **.NET 8.0** - Framework principal
-- **ASP.NET Core 8.0** - Web API
+- **ASP.NET Core 8.0 Minimal API** - Web API leve e eficiente
 - **Entity Framework Core 8.0** - ORM
 - **PostgreSQL 16** - Banco de dados
 - **MediatR** - CQRS pattern
 - **JWT Bearer** - Autenticação
-- **xUnit** - Testes unitários
+- **NUnit** - Framework de testes (conforme especificação)
 - **FluentAssertions** - Assertions nos testes
 - **Swagger/OpenAPI** - Documentação da API
 - **Docker & Docker Compose** - Containerização

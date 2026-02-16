@@ -1,24 +1,24 @@
 # Build stage
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
+WORKDIR /build
 
 # Copy project files
-COPY OrderService.Domain/OrderService.Domain.csproj OrderService.Domain/
-COPY OrderService.Application/OrderService.Application.csproj OrderService.Application/
-COPY OrderService.Infrastructure/OrderService.Infrastructure.csproj OrderService.Infrastructure/
-COPY OrderService.API/OrderService.API.csproj OrderService.API/
+COPY src/OrderService.Domain/OrderService.Domain.csproj src/OrderService.Domain/
+COPY src/OrderService.Application/OrderService.Application.csproj src/OrderService.Application/
+COPY src/OrderService.Infrastructure/OrderService.Infrastructure.csproj src/OrderService.Infrastructure/
+COPY src/OrderService.API/OrderService.API.csproj src/OrderService.API/
 
 # Restore dependencies
-RUN dotnet restore OrderService.API/OrderService.API.csproj
+RUN dotnet restore src/OrderService.API/OrderService.API.csproj
 
 # Copy source code
-COPY OrderService.Domain/ OrderService.Domain/
-COPY OrderService.Application/ OrderService.Application/
-COPY OrderService.Infrastructure/ OrderService.Infrastructure/
-COPY OrderService.API/ OrderService.API/
+COPY src/OrderService.Domain/ src/OrderService.Domain/
+COPY src/OrderService.Application/ src/OrderService.Application/
+COPY src/OrderService.Infrastructure/ src/OrderService.Infrastructure/
+COPY src/OrderService.API/ src/OrderService.API/
 
 # Build the application
-WORKDIR /src/OrderService.API
+WORKDIR /build/src/OrderService.API
 RUN dotnet build -c Release -o /app/build
 
 # Publish
