@@ -4,38 +4,36 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace OrderService.API.Controllers;
+namespace OrderService.API.Endpoints;
 
-[ApiController]
-[Route("auth")]
-public class AuthController : ControllerBase
+public static class AuthEndpoints
 {
-    private readonly IConfiguration _configuration;
-
-    public AuthController(IConfiguration configuration)
+    public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
-        _configuration = configuration;
+        app.MapPost("/auth/token", GenerateToken)
+            .WithName("GenerateToken")
+            .AllowAnonymous()
+            .WithOpenApi();
     }
 
-    [HttpPost("token")]
-    public IActionResult GenerateToken([FromBody] TokenRequest request)
+    private static IResult GenerateToken(
+        [FromBody] TokenRequest request,
+        IConfiguration configuration)
     {
-        // Simple validation - in production, validate against a user database
         if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
         {
-            return BadRequest(new { error = "Username and password are required" });
+            return Results.BadRequest(new { error = "Username and password are required" });
         }
 
         // For demo purposes, accept any username/password
-        // In production, validate credentials against a database
-        var token = GenerateJwtToken(request.Username);
-        
-        return Ok(new TokenResponse(token, "bearer", 3600));
+        var token = GenerateJwtToken(request.Username, configuration);
+        return Results.Ok(new TokenResponse(token, "bearer", 3600));
     }
 
-    private string GenerateJwtToken(string username)
+    private static string GenerateJwtToken(string username, IConfiguration configuration)
     {
-        var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
+        var securityKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(configuration["Jwt:Key"]!));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]
@@ -46,8 +44,8 @@ public class AuthController : ControllerBase
         };
 
         var token = new JwtSecurityToken(
-            issuer: _configuration["Jwt:Issuer"],
-            audience: _configuration["Jwt:Audience"],
+            issuer: configuration["Jwt:Issuer"],
+            audience: configuration["Jwt:Audience"],
             claims: claims,
             expires: DateTime.UtcNow.AddHours(1),
             signingCredentials: credentials

@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using OrderService.API.Endpoints;
+using OrderService.API.Middleware;
 using OrderService.Application.Commands.Handlers;
 using OrderService.Application.Interfaces;
 using OrderService.Infrastructure;
@@ -47,9 +49,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// Add Controllers
-builder.Services.AddControllers();
-
 // Add Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -58,7 +57,7 @@ builder.Services.AddSwaggerGen(c =>
     { 
         Title = "Order Service API", 
         Version = "v1",
-        Description = "A REST API for managing orders with stock validation"
+        Description = "A REST API for managing orders with stock validation (Minimal API)"
     });
 
     // Add JWT authentication to Swagger
@@ -115,9 +114,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Add Correlation ID middleware
+app.UseCorrelationId();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+// Map Minimal API endpoints
+app.MapAuthEndpoints();
+app.MapOrderEndpoints();
 
 app.Run();
