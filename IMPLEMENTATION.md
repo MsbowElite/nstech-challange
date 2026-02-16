@@ -116,7 +116,8 @@ dotnet ef database update --startup-project ../OrderService.API
 cd ../OrderService.API
 dotnet run
 
-# A API estará em https://localhost:5001 ou http://localhost:5000
+# A API estará em http://localhost:5000
+# Com Docker: http://localhost:8080
 ```
 
 ---
