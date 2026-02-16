@@ -1,5 +1,6 @@
 using MediatR;
 using OrderService.Application.Commands;
+using OrderService.Application.Common;
 using OrderService.Application.DTOs;
 using OrderService.Application.Interfaces;
 
@@ -24,7 +25,7 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Ord
     public async Task<OrderResponse> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
     {
         // Check idempotency
-        var idempotencyKey = $"cancel-{request.OrderId}-{request.IdempotencyKey}";
+        var idempotencyKey = IdempotencyKeys.ForCancel(request.OrderId, request.IdempotencyKey);
         if (await _idempotencyRepository.ExistsAsync(idempotencyKey, cancellationToken))
         {
             // Already processed, return current state

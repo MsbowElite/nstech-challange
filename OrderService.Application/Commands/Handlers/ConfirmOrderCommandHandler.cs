@@ -1,5 +1,6 @@
 using MediatR;
 using OrderService.Application.Commands;
+using OrderService.Application.Common;
 using OrderService.Application.DTOs;
 using OrderService.Application.Interfaces;
 using OrderService.Domain.Entities;
@@ -25,7 +26,7 @@ public class ConfirmOrderCommandHandler : IRequestHandler<ConfirmOrderCommand, O
     public async Task<OrderResponse> Handle(ConfirmOrderCommand request, CancellationToken cancellationToken)
     {
         // Check idempotency
-        var idempotencyKey = $"confirm-{request.OrderId}-{request.IdempotencyKey}";
+        var idempotencyKey = IdempotencyKeys.ForConfirm(request.OrderId, request.IdempotencyKey);
         if (await _idempotencyRepository.ExistsAsync(idempotencyKey, cancellationToken))
         {
             // Already processed, return current state
