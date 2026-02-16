@@ -1,13 +1,15 @@
 using FluentAssertions;
+using NUnit.Framework;
 using OrderService.Domain.Entities;
 using OrderService.Domain.Enums;
 using OrderService.Domain.ValueObjects;
 
 namespace OrderService.Tests.Domain;
 
+[TestFixture]
 public class OrderTests
 {
-    [Fact]
+    [Test]
     public void CreateOrder_WithValidData_ShouldSucceed()
     {
         // Arrange
@@ -30,7 +32,7 @@ public class OrderTests
         order.Items.Should().HaveCount(1);
     }
 
-    [Fact]
+    [Test]
     public void CreateOrder_WithoutItems_ShouldThrowException()
     {
         // Arrange
@@ -44,7 +46,7 @@ public class OrderTests
             .WithMessage("*at least one item*");
     }
 
-    [Fact]
+    [Test]
     public void ConfirmOrder_WhenPlaced_ShouldSucceed()
     {
         // Arrange
@@ -58,7 +60,7 @@ public class OrderTests
         order.UpdatedAt.Should().NotBeNull();
     }
 
-    [Fact]
+    [Test]
     public void ConfirmOrder_WhenAlreadyConfirmed_ShouldThrowException()
     {
         // Arrange
@@ -71,7 +73,7 @@ public class OrderTests
             .WithMessage("*cannot confirm*");
     }
 
-    [Fact]
+    [Test]
     public void CancelOrder_WhenPlaced_ShouldSucceed()
     {
         // Arrange
@@ -84,7 +86,7 @@ public class OrderTests
         order.Status.Should().Be(OrderStatus.Canceled);
     }
 
-    [Fact]
+    [Test]
     public void CancelOrder_WhenConfirmed_ShouldSucceed()
     {
         // Arrange
@@ -98,7 +100,7 @@ public class OrderTests
         order.Status.Should().Be(OrderStatus.Canceled);
     }
 
-    [Fact]
+    [Test]
     public void CancelOrder_WhenAlreadyCanceled_ShouldThrowException()
     {
         // Arrange

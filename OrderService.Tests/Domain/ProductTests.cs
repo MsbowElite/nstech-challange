@@ -1,11 +1,13 @@
 using FluentAssertions;
+using NUnit.Framework;
 using OrderService.Domain.Entities;
 
 namespace OrderService.Tests.Domain;
 
+[TestFixture]
 public class ProductTests
 {
-    [Fact]
+    [Test]
     public void CreateProduct_WithValidData_ShouldSucceed()
     {
         // Arrange & Act
@@ -18,7 +20,7 @@ public class ProductTests
         product.AvailableQuantity.Should().Be(10);
     }
 
-    [Fact]
+    [Test]
     public void ReserveStock_WithSufficientQuantity_ShouldSucceed()
     {
         // Arrange
@@ -31,7 +33,7 @@ public class ProductTests
         product.AvailableQuantity.Should().Be(5);
     }
 
-    [Fact]
+    [Test]
     public void ReserveStock_WithInsufficientQuantity_ShouldThrowException()
     {
         // Arrange
@@ -43,7 +45,7 @@ public class ProductTests
             .WithMessage("*Insufficient stock*");
     }
 
-    [Fact]
+    [Test]
     public void ReleaseStock_ShouldIncreaseQuantity()
     {
         // Arrange
@@ -57,7 +59,7 @@ public class ProductTests
         product.AvailableQuantity.Should().Be(10);
     }
 
-    [Fact]
+    [Test]
     public void UpdatePrice_WithValidPrice_ShouldSucceed()
     {
         // Arrange
@@ -71,7 +73,7 @@ public class ProductTests
         product.UpdatedAt.Should().NotBeNull();
     }
 
-    [Fact]
+    [Test]
     public void UpdatePrice_WithNegativePrice_ShouldThrowException()
     {
         // Arrange

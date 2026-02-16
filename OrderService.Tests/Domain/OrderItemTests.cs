@@ -1,11 +1,13 @@
 using FluentAssertions;
+using NUnit.Framework;
 using OrderService.Domain.ValueObjects;
 
 namespace OrderService.Tests.Domain;
 
+[TestFixture]
 public class OrderItemTests
 {
-    [Fact]
+    [Test]
     public void CreateOrderItem_WithValidData_ShouldSucceed()
     {
         // Arrange
@@ -23,7 +25,7 @@ public class OrderItemTests
         orderItem.Subtotal.Should().Be(300.00m);
     }
 
-    [Fact]
+    [Test]
     public void CreateOrderItem_WithZeroQuantity_ShouldThrowException()
     {
         // Arrange
@@ -35,7 +37,7 @@ public class OrderItemTests
             .WithMessage("*greater than zero*");
     }
 
-    [Fact]
+    [Test]
     public void CreateOrderItem_WithNegativePrice_ShouldThrowException()
     {
         // Arrange
@@ -47,7 +49,7 @@ public class OrderItemTests
             .WithMessage("*cannot be negative*");
     }
 
-    [Fact]
+    [Test]
     public void Subtotal_ShouldCalculateCorrectly()
     {
         // Arrange & Act
