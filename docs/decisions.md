@@ -5,4 +5,10 @@ A criação de aquivos auxiliares para a IA em .github/instructions/main.md ajud
 Minimal API foi utilizado pelo tamanho do projeto e nenhum recurso especifico de controllers será utilizado.
 O NUnit foi adotado visando o alinhamento com os padrões definidos pelo time e a viabilidade de um possível trabalho futuro na empresa.
 
+#Phase2
 
+Preparo para debug funcionar com dock compose
+Configuração do MCP para tornar o agente do VS Code mais capacitado em suas funcionalidades e suporte ao projeto
+Copilot é capaz de avaliar o PR e sugerir melhorias
+
+#Phase3
