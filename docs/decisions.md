@@ -9,6 +9,5 @@ O NUnit foi adotado visando o alinhamento com os padrões definidos pelo time e 
 
 Preparo para debug funcionar com dock compose
 Configuração do MCP para tornar o agente do VS Code mais capacitado em suas funcionalidades e suporte ao projeto
-Copilot é capaz de avaliar o PR e sugerir melhorias
 
 #Phase3
