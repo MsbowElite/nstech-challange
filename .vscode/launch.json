@@ -1,27 +1,41 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Docker: Attach to .NET Container",
-      "type": "coreclr",
-      "request": "attach",
-      "processId": "${command:pickRemoteProcess}",
-      "pipeTransport": {
-        "pipeCwd": "${workspaceRoot}",
-        "pipeProgram": "docker",
-        "pipeArgs": [
-          "exec",
-          "-i",
-          "orderservice_api"
-        ],
-        "debuggerPath": "/vsdbg/vsdbg",
-        "quoteArgs": false
-      },
-      "sourceFileMap": {
-        "/src": "${workspaceRoot}/src",
-        "/build/src": "${workspaceRoot}/src",
-        "/app": "${workspaceRoot}/src"
-      }
-    }
-  ]
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "Docker: Attach to .NET",
+            "type": "docker",
+            "request": "attach",
+            "platform": "netCore",
+            "sourceFileMap": {
+                "/build/src/OrderService.API": "${workspaceFolder}/src/OrderService.API",
+                "/build/src/OrderService.Application": "${workspaceFolder}/src/OrderService.Application",
+                "/build/src/OrderService.Domain": "${workspaceFolder}/src/OrderService.Domain",
+                "/build/src/OrderService.Infrastructure": "${workspaceFolder}/src/OrderService.Infrastructure",
+                "/build/src": "${workspaceFolder}/src",
+                "/src/OrderService.API": "${workspaceFolder}/src/OrderService.API",
+                "/src/OrderService.Application": "${workspaceFolder}/src/OrderService.Application",
+                "/src/OrderService.Domain": "${workspaceFolder}/src/OrderService.Domain",
+                "/src/OrderService.Infrastructure": "${workspaceFolder}/src/OrderService.Infrastructure",
+                "/src": "${workspaceFolder}/src"
+            },
+            "justMyCode": false,
+            "logging": {
+                "moduleLoad": false
+            }
+        },
+        {
+            "name": "Local: .NET Core Launch",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/src/OrderService.API/bin/Debug/net8.0/OrderService.API.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/src/OrderService.API",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+        }
+    ]
 }

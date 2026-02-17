@@ -11,3 +11,9 @@ Preparo para debug funcionar com dock compose
 Configuração do MCP para tornar o agente do VS Code mais capacitado em suas funcionalidades e suporte ao projeto
 
 #Phase3
+
+Ambiente mais estável, adicionado fluent validations mas sem Result Pattern, ocorrendo um certo excesso de throws mas tornando o desenvolvimento mais fácil e rápido, deve ser analisado com time necessida de aplicação de outro padrão.
+
+Correções de no fluxo de salvar dados, utilizando tracking aproveitando os changes do domínio, e em caso que query simples, para melhor performance segue sem tracking. Poderia ser 2 contextos diferentes, mas pela falta de complexidade e outras alterações no fluxo, pode ser considerado este mais simplificado.
+
+Operação idempotente evita anomalias de concorrêcia de operação, mas poderia ser aplicado o Optimistic Concurrency Control (OCC), muito usado em casos junto com domínio com state pattern, sendo que a troca de status só é feita se o UpdateAt é o mesmo do obtido na consulta, se for diferente repete todo o processo. 

@@ -5,6 +5,7 @@ namespace OrderService.Application.Interfaces;
 public interface IOrderRepository
 {
     Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<Order?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
     Task<(List<Order> Orders, int TotalCount)> GetPagedAsync(
         Guid? customerId,
         string? status,
@@ -22,6 +23,7 @@ public interface IProductRepository
 {
     Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<List<Product>> GetByIdsAsync(List<Guid> ids, CancellationToken cancellationToken = default);
+    Task<List<Product>> GetByIdsForUpdateAsync(List<Guid> ids, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 

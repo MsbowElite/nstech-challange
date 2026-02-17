@@ -22,6 +22,12 @@ public class OrderRepository : IOrderRepository
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
+    public async Task<Order?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.Orders
+            .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
+    }
+
     public async Task<(List<Order> Orders, int TotalCount)> GetPagedAsync(
         Guid? customerId,
         string? status,
@@ -89,6 +95,14 @@ public class ProductRepository : IProductRepository
     }
 
     public async Task<List<Product>> GetByIdsAsync(List<Guid> ids, CancellationToken cancellationToken = default)
+    {
+        return await _context.Products
+            .AsNoTracking()
+            .Where(p => ids.Contains(p.Id))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<List<Product>> GetByIdsForUpdateAsync(List<Guid> ids, CancellationToken cancellationToken = default)
     {
         return await _context.Products
             .Where(p => ids.Contains(p.Id))

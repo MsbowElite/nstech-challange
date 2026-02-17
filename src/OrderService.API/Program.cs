@@ -1,11 +1,14 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OrderService.API.Endpoints;
 using OrderService.API.Middleware;
+using OrderService.Application.Behaviors;
 using OrderService.Application.Commands.Handlers;
 using OrderService.Application.Interfaces;
+using OrderService.Application.Validators;
 using OrderService.Infrastructure;
 using OrderService.Infrastructure.Data;
 using OrderService.Infrastructure.Repositories;
@@ -17,9 +20,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<OrderDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add MediatR
+// Add FluentValidation
+builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderCommandValidator>();
+
+// Add MediatR with validation behavior
 builder.Services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssembly(typeof(CreateOrderCommandHandler).Assembly);
+    cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
 });
 
 // Add Repositories
@@ -55,8 +62,8 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo 
     { 
-        Title = "Order Service API", 
-        Version = "v1",
+        Title = "Order Service API Test", 
+        Version = "v1.1",
         Description = "A REST API for managing orders with stock validation (Minimal API)"
     });
 
@@ -113,6 +120,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Add Exception Handling middleware
+app.UseExceptionHandling();
 
 // Add Correlation ID middleware
 app.UseCorrelationId();

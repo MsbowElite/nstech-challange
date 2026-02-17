@@ -37,7 +37,7 @@ public class ConfirmOrderCommandHandler : IRequestHandler<ConfirmOrderCommand, O
             return MapToResponse(existingOrder);
         }
 
-        var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+        var order = await _orderRepository.GetByIdForUpdateAsync(request.OrderId, cancellationToken);
         if (order == null)
             throw new InvalidOperationException($"Order {request.OrderId} not found");
 
@@ -46,7 +46,7 @@ public class ConfirmOrderCommandHandler : IRequestHandler<ConfirmOrderCommand, O
         {
             // Reserve stock
             var productIds = order.Items.Select(i => i.ProductId).ToList();
-            var products = await _productRepository.GetByIdsAsync(productIds, cancellationToken);
+            var products = await _productRepository.GetByIdsForUpdateAsync(productIds, cancellationToken);
 
             foreach (var item in order.Items)
             {
@@ -57,7 +57,6 @@ public class ConfirmOrderCommandHandler : IRequestHandler<ConfirmOrderCommand, O
             order.Confirm();
             
             await _productRepository.SaveChangesAsync(cancellationToken);
-            await _orderRepository.UpdateAsync(order, cancellationToken);
             await _orderRepository.SaveChangesAsync(cancellationToken);
         }
 
