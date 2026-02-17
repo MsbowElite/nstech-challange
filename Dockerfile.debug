@@ -1,0 +1,41 @@
+# Debug Dockerfile - enables remote debugging with vsdbg
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /build
+
+# Copy project files
+COPY src/OrderService.Domain/OrderService.Domain.csproj src/OrderService.Domain/
+COPY src/OrderService.Application/OrderService.Application.csproj src/OrderService.Application/
+COPY src/OrderService.Infrastructure/OrderService.Infrastructure.csproj src/OrderService.Infrastructure/
+COPY src/OrderService.API/OrderService.API.csproj src/OrderService.API/
+
+# Restore dependencies
+RUN dotnet restore src/OrderService.API/OrderService.API.csproj
+
+# Copy source code
+COPY src/OrderService.Domain/ src/OrderService.Domain/
+COPY src/OrderService.Application/ src/OrderService.Application/
+COPY src/OrderService.Infrastructure/ src/OrderService.Infrastructure/
+COPY src/OrderService.API/ src/OrderService.API/
+
+# Build the application in Debug mode
+WORKDIR /build/src/OrderService.API
+RUN dotnet build -c Debug -o /app/build
+
+# Debug runtime stage
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS debug
+WORKDIR /app
+
+# Install debugger
+RUN apt-get update && apt-get install -y unzip && \
+    curl -sSL https://aka.ms/getvsdbgsh | bash /dev/stdin -v latest -l /vsdbg
+
+# Copy built application
+COPY --from=build /app/build .
+
+# Copy source for better debugging experience
+COPY src/ /src/
+
+EXPOSE 8080 5005
+
+# Start with debugger attached
+ENTRYPOINT ["dotnet", "OrderService.API.dll"]
