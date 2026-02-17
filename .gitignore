@@ -105,3 +105,9 @@ copilot-chat.md
 # Codespaces
 ############################
 .codespaces/
+
+############################
+# Temporary setup scripts
+############################
+create-solution.sh
+add-packages.sh

@@ -1,0 +1,45 @@
+@OrderService.API_HostAddress = http://localhost:8080
+
+### Get JWT Token
+POST {{OrderService.API_HostAddress}}/auth/token
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin"
+}
+
+### Create Order (requires token from above)
+POST {{OrderService.API_HostAddress}}/orders
+Content-Type: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "customerId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "currency": "USD",
+  "items": [
+    {
+      "productId": "PRODUCT_ID_FROM_DB",
+      "quantity": 2
+    }
+  ]
+}
+
+### Get Order by ID
+GET {{OrderService.API_HostAddress}}/orders/ORDER_ID_HERE
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### List Orders
+GET {{OrderService.API_HostAddress}}/orders?page=1&pageSize=10
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Confirm Order
+POST {{OrderService.API_HostAddress}}/orders/ORDER_ID_HERE/confirm
+Authorization: Bearer YOUR_TOKEN_HERE
+Idempotency-Key: confirm-unique-key-123
+
+### Cancel Order
+POST {{OrderService.API_HostAddress}}/orders/ORDER_ID_HERE/cancel
+Authorization: Bearer YOUR_TOKEN_HERE
+Idempotency-Key: cancel-unique-key-456
+
