@@ -22,6 +22,7 @@ Operação idempotente evita anomalias de concorrêcia de operação, e a forma 
 
 #Phase5 (Planejamento)
 
+Considerando o contexto scoped por default, os comandos com 2 saveschanges basicamente o segundo está sendo desnecessário, pode na prática está sendo feito o pedido de save changes duplicado na mesma instância de contexto
 Separar responsabilidades de Repository
 Possibilidade de criar 2 contexto de banco um para leitura e outro para escrita
 Aumentar a cobertura de testes
