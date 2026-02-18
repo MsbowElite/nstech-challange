@@ -21,17 +21,17 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.debug
+      target: debug
     container_name: orderservice_api
     ports:
       - "8080:8080"
       - "5005:5005"
     volumes:
-      - ./src:/src
+      - ./src:/src:ro
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_URLS=http://+:8080
-      - DOTNET_USE_POLLING_FILE_WATCHER=1
       - ConnectionStrings__DefaultConnection=Host=postgres;Port=5432;Database=orderservicedb;Username=orderuser;Password=orderpass123
       - Jwt__Key=ThisIsASecretKeyForDevelopmentOnlyDoNotUseInProduction123456
       - Jwt__Issuer=OrderServiceAPI
@@ -41,6 +41,9 @@ services:
         condition: service_healthy
     networks:
       - orderservice_network
+    # Keep container running and don't restart automatically for debugging
+    stdin_open: true
+    tty: true
 
 volumes:
   postgres_data:
