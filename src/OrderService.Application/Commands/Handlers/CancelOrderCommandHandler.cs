@@ -1,6 +1,5 @@
 using MediatR;
 using OrderService.Application.Commands;
-using OrderService.Application.Common;
 using OrderService.Application.DTOs;
 using OrderService.Application.Interfaces;
 
@@ -10,42 +9,30 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Ord
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IProductRepository _productRepository;
-    private readonly IIdempotencyRepository _idempotencyRepository;
 
     public CancelOrderCommandHandler(
         IOrderRepository orderRepository,
-        IProductRepository productRepository,
-        IIdempotencyRepository idempotencyRepository)
+        IProductRepository productRepository)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
-        _idempotencyRepository = idempotencyRepository;
     }
 
     public async Task<OrderResponse> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
     {
-        // Check idempotency
-        var idempotencyKey = IdempotencyKeys.ForCancel(request.OrderId, request.IdempotencyKey);
-        if (await _idempotencyRepository.ExistsAsync(idempotencyKey, cancellationToken))
-        {
-            // Already processed, return current state
-            var existingOrder = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
-            if (existingOrder == null)
-                throw new InvalidOperationException($"Order {request.OrderId} not found");
-            
-            return MapToResponse(existingOrder);
-        }
-
-        var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+        var order = await _orderRepository.GetByIdForUpdateAsync(request.OrderId, cancellationToken);
         if (order == null)
             throw new InvalidOperationException($"Order {request.OrderId} not found");
 
+        if (!order.CanBeCanceled())
+            throw new InvalidOperationException($"Cannot cancel order in {order.Status} status. Only Placed or Confirmed orders can be canceled.");
+
         // Only release stock if order was confirmed
-        if (order.IsConfirmed() && order.CanBeCanceled())
+        if (order.IsConfirmed())
         {
             // Release stock
             var productIds = order.Items.Select(i => i.ProductId).ToList();
-            var products = await _productRepository.GetByIdsAsync(productIds, cancellationToken);
+            var products = await _productRepository.GetByIdsForUpdateAsync(productIds, cancellationToken);
 
             foreach (var item in order.Items)
             {
@@ -56,15 +43,9 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Ord
             await _productRepository.SaveChangesAsync(cancellationToken);
         }
 
-        if (order.CanBeCanceled())
-        {
-            order.Cancel();
-            await _orderRepository.UpdateAsync(order, cancellationToken);
-            await _orderRepository.SaveChangesAsync(cancellationToken);
-        }
-
-        // Mark as processed for idempotency
-        await _idempotencyRepository.AddAsync(idempotencyKey, cancellationToken);
+        order.Cancel();
+        await _orderRepository.UpdateAsync(order, cancellationToken);
+        await _orderRepository.SaveChangesAsync(cancellationToken);
 
         return MapToResponse(order);
     }

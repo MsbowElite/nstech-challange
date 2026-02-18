@@ -76,7 +76,14 @@ public class OrderRepository : IOrderRepository
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await _context.SaveChangesAsync(cancellationToken);
+        try
+        {
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new InvalidOperationException("Order was modified by another request. Please retry the operation.");
+        }
     }
 }
 
@@ -111,31 +118,13 @@ public class ProductRepository : IProductRepository
 
     public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await _context.SaveChangesAsync(cancellationToken);
-    }
-}
-
-public class IdempotencyRepository : IIdempotencyRepository
-{
-    private readonly OrderDbContext _context;
-
-    public IdempotencyRepository(OrderDbContext context)
-    {
-        _context = context;
-    }
-
-    public async Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default)
-    {
-        return await _context.IdempotencyRecords.AnyAsync(i => i.Key == key, cancellationToken);
-    }
-
-    public async Task AddAsync(string key, CancellationToken cancellationToken = default)
-    {
-        await _context.IdempotencyRecords.AddAsync(new IdempotencyRecord
+        try
         {
-            Key = key,
-            CreatedAt = DateTime.UtcNow
-        }, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new InvalidOperationException("Product was modified by another request. Please retry the operation.");
+        }
     }
 }

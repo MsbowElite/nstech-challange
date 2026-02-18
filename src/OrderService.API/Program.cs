@@ -32,7 +32,6 @@ builder.Services.AddMediatR(cfg => {
 // Add Repositories
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IIdempotencyRepository, IdempotencyRepository>();
 
 // Add JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsASecretKeyForDevelopmentOnlyDoNotUseInProduction123456";
