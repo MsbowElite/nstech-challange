@@ -1,6 +1,5 @@
 using MediatR;
 using OrderService.Application.Commands;
-using OrderService.Application.Common;
 using OrderService.Application.DTOs;
 using OrderService.Application.Interfaces;
 using OrderService.Domain.Entities;
@@ -11,57 +10,38 @@ public class ConfirmOrderCommandHandler : IRequestHandler<ConfirmOrderCommand, O
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IProductRepository _productRepository;
-    private readonly IIdempotencyRepository _idempotencyRepository;
 
     public ConfirmOrderCommandHandler(
         IOrderRepository orderRepository,
-        IProductRepository productRepository,
-        IIdempotencyRepository idempotencyRepository)
+        IProductRepository productRepository)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
-        _idempotencyRepository = idempotencyRepository;
     }
 
     public async Task<OrderResponse> Handle(ConfirmOrderCommand request, CancellationToken cancellationToken)
     {
-        // Check idempotency
-        var idempotencyKey = IdempotencyKeys.ForConfirm(request.OrderId, request.IdempotencyKey);
-        if (await _idempotencyRepository.ExistsAsync(idempotencyKey, cancellationToken))
-        {
-            // Already processed, return current state
-            var existingOrder = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
-            if (existingOrder == null)
-                throw new InvalidOperationException($"Order {request.OrderId} not found");
-            
-            return MapToResponse(existingOrder);
-        }
-
         var order = await _orderRepository.GetByIdForUpdateAsync(request.OrderId, cancellationToken);
         if (order == null)
             throw new InvalidOperationException($"Order {request.OrderId} not found");
 
-        // Only confirm if not already confirmed
-        if (order.CanBeConfirmed())
+        if (!order.CanBeConfirmed())
+            throw new InvalidOperationException($"Cannot confirm order in {order.Status} status. Only Placed orders can be confirmed.");
+
+        // Reserve stock
+        var productIds = order.Items.Select(i => i.ProductId).ToList();
+        var products = await _productRepository.GetByIdsForUpdateAsync(productIds, cancellationToken);
+
+        foreach (var item in order.Items)
         {
-            // Reserve stock
-            var productIds = order.Items.Select(i => i.ProductId).ToList();
-            var products = await _productRepository.GetByIdsForUpdateAsync(productIds, cancellationToken);
-
-            foreach (var item in order.Items)
-            {
-                var product = products.First(p => p.Id == item.ProductId);
-                product.ReserveStock(item.Quantity);
-            }
-
-            order.Confirm();
-            
-            await _productRepository.SaveChangesAsync(cancellationToken);
-            await _orderRepository.SaveChangesAsync(cancellationToken);
+            var product = products.First(p => p.Id == item.ProductId);
+            product.ReserveStock(item.Quantity);
         }
 
-        // Mark as processed for idempotency
-        await _idempotencyRepository.AddAsync(idempotencyKey, cancellationToken);
+        order.Confirm();
+        
+        await _productRepository.SaveChangesAsync(cancellationToken);
+        await _orderRepository.SaveChangesAsync(cancellationToken);
 
         return MapToResponse(order);
     }

@@ -12,7 +12,6 @@ public class OrderDbContext : DbContext
 
     public DbSet<Order> Orders { get; set; }
     public DbSet<Product> Products { get; set; }
-    public DbSet<IdempotencyRecord> IdempotencyRecords { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -44,6 +43,9 @@ public class OrderDbContext : DbContext
             entity.HasIndex(o => o.CustomerId);
             entity.HasIndex(o => o.Status);
             entity.HasIndex(o => o.CreatedAt);
+            
+            // Enable optimistic concurrency control with UpdatedAt
+            entity.Property(o => o.UpdatedAt).IsConcurrencyToken();
         });
 
         // Product configuration
@@ -58,20 +60,5 @@ public class OrderDbContext : DbContext
             entity.Property(p => p.CreatedAt).IsRequired();
         });
 
-        // Idempotency configuration
-        modelBuilder.Entity<IdempotencyRecord>(entity =>
-        {
-            entity.ToTable("IdempotencyRecords");
-            entity.HasKey(i => i.Key);
-            
-            entity.Property(i => i.Key).IsRequired().HasMaxLength(500);
-            entity.Property(i => i.CreatedAt).IsRequired();
-        });
     }
-}
-
-public class IdempotencyRecord
-{
-    public string Key { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; }
 }

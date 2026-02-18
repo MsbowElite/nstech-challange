@@ -26,9 +26,3 @@ public interface IProductRepository
     Task<List<Product>> GetByIdsForUpdateAsync(List<Guid> ids, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
-
-public interface IIdempotencyRepository
-{
-    Task<bool> ExistsAsync(string key, CancellationToken cancellationToken = default);
-    Task AddAsync(string key, CancellationToken cancellationToken = default);
-}

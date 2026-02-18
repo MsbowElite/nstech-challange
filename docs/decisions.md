@@ -16,4 +16,6 @@ Ambiente mais estável, adicionado fluent validations mas sem Result Pattern, oc
 
 Correções de no fluxo de salvar dados, utilizando tracking aproveitando os changes do domínio, e em caso que query simples, para melhor performance segue sem tracking. Poderia ser 2 contextos diferentes, mas pela falta de complexidade e outras alterações no fluxo, pode ser considerado este mais simplificado.
 
-Operação idempotente evita anomalias de concorrêcia de operação, mas poderia ser aplicado o Optimistic Concurrency Control (OCC), muito usado em casos junto com domínio com state pattern, sendo que a troca de status só é feita se o UpdateAt é o mesmo do obtido na consulta, se for diferente repete todo o processo. 
+#Phase4
+
+Operação idempotente evita anomalias de concorrêcia de operação, e a forma aplicada pela IA tem riscos e gerar muitos dados desnecessários, assim preferi optar por Optimistic Concurrency Control (OCC), muito usado em casos junto com domínio com state pattern, sendo que a troca de status só é feita se o UpdateAt é o mesmo do obtido na consulta, se for diferente repete todo o processo. Nesse caso não é tão normal acontecer mais de 1 pedido de confirmação do pedido, e se acontecer vai gerar uma exceção, em casos que podem acontecer muitas exceções, pode ser aplicar a forma pessimista.
