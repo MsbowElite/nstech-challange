@@ -24,7 +24,14 @@ public class OrderDbContext : DbContext
             entity.HasKey(o => o.Id);
             
             entity.Property(o => o.CustomerId).IsRequired();
-            entity.Property(o => o.Status).IsRequired();
+            
+            // Configure OrderStatus value object conversion
+            entity.Property(o => o.Status)
+                .IsRequired()
+                .HasConversion(
+                    v => v.Name,                    // Convert to string for database
+                    v => OrderStatus.FromName(v));  // Convert from string when reading
+            
             entity.Property(o => o.Currency).IsRequired().HasMaxLength(3);
             entity.Property(o => o.CreatedAt).IsRequired();
             

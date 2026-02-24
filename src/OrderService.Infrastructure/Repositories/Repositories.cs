@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using OrderService.Application.Interfaces;
 using OrderService.Domain.Entities;
-using OrderService.Domain.Enums;
+using OrderService.Domain.Specifications;
+using OrderService.Domain.ValueObjects;
 using OrderService.Infrastructure.Data;
 
 namespace OrderService.Infrastructure.Repositories;
@@ -28,6 +29,39 @@ public class OrderRepository : IOrderRepository
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
     }
 
+    public async Task<Order?> GetBySpecificationAsync(Specification<Order> spec, CancellationToken cancellationToken = default)
+    {
+        var query = _context.Orders.AsQueryable();
+
+        // Apply filtering criteria
+        if (spec.Criteria != null)
+            query = query.Where(spec.Criteria);
+
+        // Apply string includes (relationships)
+        query = spec.IncludeStrings.Aggregate(query, (current, include) => current.Include(include));
+
+        // Apply expression includes (relationships)
+        query = spec.Includes.Aggregate(query, (current, include) => current.Include(include));
+
+        // Apply ordering
+        if (spec.OrderBy != null)
+            query = query.OrderBy(spec.OrderBy);
+        else if (spec.OrderByDescending != null)
+            query = query.OrderByDescending(spec.OrderByDescending);
+
+        // Apply paging
+        if (spec.IsPagingEnabled)
+        {
+            if (spec.Skip.HasValue)
+                query = query.Skip(spec.Skip.Value);
+
+            if (spec.Take.HasValue)
+                query = query.Take(spec.Take.Value);
+        }
+
+        return await query.FirstOrDefaultAsync(cancellationToken);
+    }
+
     public async Task<(List<Order> Orders, int TotalCount)> GetPagedAsync(
         Guid? customerId,
         string? status,
@@ -42,8 +76,18 @@ public class OrderRepository : IOrderRepository
         if (customerId.HasValue)
             query = query.Where(o => o.CustomerId == customerId.Value);
 
-        if (!string.IsNullOrWhiteSpace(status) && Enum.TryParse<OrderStatus>(status, true, out var orderStatus))
-            query = query.Where(o => o.Status == orderStatus);
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            try
+            {
+                var orderStatus = OrderStatus.FromName(status);
+                query = query.Where(o => o.Status == orderStatus);
+            }
+            catch
+            {
+                // Invalid status name, skip filter
+            }
+        }
 
         if (from.HasValue)
             query = query.Where(o => o.CreatedAt >= from.Value);
