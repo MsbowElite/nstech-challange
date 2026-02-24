@@ -1,70 +1,91 @@
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using OrderService.Application.DTOs;
 using OrderService.Application.Interfaces;
+using OrderService.Application.Mappers;
 using OrderService.Application.Queries;
 
 namespace OrderService.Application.Queries.Handlers;
 
+/// <summary>
+/// Handler for retrieving an order by ID.
+/// Uses no-tracking queries for optimal read performance.
+/// </summary>
 public class GetOrderByIdQueryHandler : IRequestHandler<GetOrderByIdQuery, OrderResponse?>
 {
-    private readonly IOrderRepository _orderRepository;
+    private readonly IOrderDbContextReadOnly _context;
 
-    public GetOrderByIdQueryHandler(IOrderRepository orderRepository)
+    public GetOrderByIdQueryHandler(IOrderDbContextReadOnly context)
     {
-        _orderRepository = orderRepository;
+        _context = context;
     }
 
     public async Task<OrderResponse?> Handle(GetOrderByIdQuery request, CancellationToken cancellationToken)
     {
-        var order = await _orderRepository.GetByIdAsync(request.OrderId, cancellationToken);
+        // Query with AsNoTracking for optimal performance
+        var order = await _context.Orders
+            .Where(o => o.Id == request.OrderId)
+            .FirstOrDefaultAsync(cancellationToken);
         
         if (order == null)
             return null;
 
-        return new OrderResponse(
-            order.Id,
-            order.CustomerId,
-            order.Status.ToString(),
-            order.Currency,
-            order.Total,
-            order.Items.Select(i => new OrderItemResponse(i.ProductId, i.UnitPrice, i.Quantity, i.Subtotal)).ToList(),
-            order.CreatedAt,
-            order.UpdatedAt
-        );
+        return OrderMapper.MapToResponse(order);
     }
 }
 
+/// <summary>
+/// Handler for retrieving multiple orders with filtering and pagination.
+/// Uses no-tracking queries for optimal read performance.
+/// </summary>
 public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult<OrderResponse>>
 {
-    private readonly IOrderRepository _orderRepository;
+    private readonly IOrderDbContextReadOnly _context;
 
-    public GetOrdersQueryHandler(IOrderRepository orderRepository)
+    public GetOrdersQueryHandler(IOrderDbContextReadOnly context)
     {
-        _orderRepository = orderRepository;
+        _context = context;
     }
 
     public async Task<PagedResult<OrderResponse>> Handle(GetOrdersQuery request, CancellationToken cancellationToken)
     {
         var query = request.Query;
-        var (orders, totalCount) = await _orderRepository.GetPagedAsync(
-            query.CustomerId,
-            query.Status,
-            query.From,
-            query.To,
-            query.Page,
-            query.PageSize,
-            cancellationToken);
+        
+        // Build query with AsNoTracking for optimal performance
+        var baseQuery = _context.Orders;
 
-        var orderResponses = orders.Select(order => new OrderResponse(
-            order.Id,
-            order.CustomerId,
-            order.Status.ToString(),
-            order.Currency,
-            order.Total,
-            order.Items.Select(i => new OrderItemResponse(i.ProductId, i.UnitPrice, i.Quantity, i.Subtotal)).ToList(),
-            order.CreatedAt,
-            order.UpdatedAt
-        )).ToList();
+        // Apply filters
+        if (query.CustomerId.HasValue)
+        {
+            baseQuery = baseQuery.Where(o => o.CustomerId == query.CustomerId.Value);
+        }
+
+        if (!string.IsNullOrEmpty(query.Status))
+        {
+            baseQuery = baseQuery.Where(o => o.Status.Name == query.Status);
+        }
+
+        if (query.From.HasValue)
+        {
+            baseQuery = baseQuery.Where(o => o.CreatedAt >= query.From.Value);
+        }
+
+        if (query.To.HasValue)
+        {
+            baseQuery = baseQuery.Where(o => o.CreatedAt <= query.To.Value);
+        }
+
+        // Get total count
+        var totalCount = await baseQuery.CountAsync(cancellationToken);
+
+        // Apply pagination
+        var orders = await baseQuery
+            .OrderByDescending(o => o.CreatedAt)
+            .Skip((query.Page - 1) * query.PageSize)
+            .Take(query.PageSize)
+            .ToListAsync(cancellationToken);
+
+        var orderResponses = orders.Select(OrderMapper.MapToResponse).ToList();
 
         var totalPages = (int)Math.Ceiling(totalCount / (double)query.PageSize);
 

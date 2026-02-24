@@ -1,7 +1,6 @@
 using FluentAssertions;
 using NUnit.Framework;
 using OrderService.Domain.Entities;
-using OrderService.Domain.Enums;
 using OrderService.Domain.ValueObjects;
 
 namespace OrderService.Tests.Domain;

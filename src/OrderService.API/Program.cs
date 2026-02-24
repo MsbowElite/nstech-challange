@@ -12,13 +12,17 @@ using OrderService.Application.Validators;
 using OrderService.Infrastructure;
 using OrderService.Infrastructure.Data;
 using OrderService.Infrastructure.Repositories;
+using OrderService.Infrastructure.UnitOfWork;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add DbContext
+// Add DbContext with tracking (for commands/modifications)
 builder.Services.AddDbContext<OrderDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add read-only DbContext wrapper (for queries - no change tracking)
+builder.Services.AddScoped<IOrderDbContextReadOnly, OrderDbContextReadOnly>();
 
 // Add FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderCommandValidator>();
@@ -29,9 +33,18 @@ builder.Services.AddMediatR(cfg => {
     cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
 });
 
-// Add Repositories
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
+// Add DbContext (required by Unit of Work and repositories)
+// Note: AddDbContext is already called above in the file
+
+// Add Unit of Work (coordinates all repositories and transaction management)
+builder.Services.AddScoped<IUnitOfWork, OrderService.Infrastructure.UnitOfWork.UnitOfWork>();
+
+// Add Repositories for query handlers (they don't participate in UnitOfWork transactions)
+builder.Services.AddScoped(sp => sp.GetRequiredService<IUnitOfWork>().Orders);
+builder.Services.AddScoped(sp => sp.GetRequiredService<IUnitOfWork>().Products);
+
+// Add Domain Services
+builder.Services.AddScoped<OrderService.Domain.Services.OrderDomainService>();
 
 // Add JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsASecretKeyForDevelopmentOnlyDoNotUseInProduction123456";
@@ -134,3 +147,6 @@ app.MapAuthEndpoints();
 app.MapOrderEndpoints();
 
 app.Run();
+
+// Make Program class accessible for testing
+public partial class Program { }
