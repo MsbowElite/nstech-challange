@@ -22,9 +22,10 @@ Operação idempotente evita anomalias de concorrêcia de operação, e a forma 
 
 #Phase5 (Planejamento)
 
-Considerando o contexto scoped por default, os comandos com 2 saveschanges basicamente o segundo está sendo desnecessário, pode na prática está sendo feito o pedido de save changes duplicado na mesma instância de contexto
-Separar responsabilidades de Repository
-Possibilidade de criar 2 contexto de banco um para leitura e outro para escrita
+Adicionado UniOfWork para melhor administracao do escopo de transacao e salvamento de mudancas
+Concentracão de regras no domínio
+Eventos
+Separação de contextos de leitura e escrita
 Aumentar a cobertura de testes
+Testes de integração
 Simular fluxo com teste de integração com framework de containers
-Remover auto migrations em prod para melhorar escalabilidade reduzindo o custo do cold start (necessário migrations manual quando necessário)
