@@ -35,3 +35,7 @@ Simular fluxo com teste de integração com framework de containers
 Remoção de eventos, pois existe um trade de execução sincrona e assincrona no fluxo de manutenção de estoque e impedimento de compra de produtos sem estoque.
 
 UnitOfWork simplificado pois transactions não são totalmente necessárias, seraparação de positórios, aumento da cobertura de testes.
+
+#Phase7 (Planejamento)
+
+NotificationPattern
