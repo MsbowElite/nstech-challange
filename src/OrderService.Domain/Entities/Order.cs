@@ -20,7 +20,7 @@ public class Order
 
     public decimal Total => _items.Sum(item => item.Subtotal);
 
-    private Order() 
+    private Order()
     {
         Status = OrderStatus.Draft; // Default for EF Core
     }
@@ -79,14 +79,22 @@ public class Order
     public bool IsPlaced() => Status == OrderStatus.Placed;
 
     /// <summary>
-    /// Query method: checks if order can transition to confirmed state.
+    /// Validation method: checks if order can transition to confirmed state.
     /// </summary>
-    public bool CanBeConfirmed() => Status.CanTransitionToConfirmed();
+    public void Confirmable()
+    {
+        if (!Status.CanTransitionToConfirmed())
+            throw new InvalidOperationException($"Cannot confirm order in {Status.Name} status. Only Placed orders can be confirmed.");
+    }
 
     /// <summary>
-    /// Query method: checks if order can transition to canceled state.
+    /// Validation method: checks if order can transition to canceled state.
     /// </summary>
-    public bool CanBeCanceled() => Status.CanTransitionToCanceled();
+    public void Cancellable()
+    {
+        if (!Status.CanTransitionToCanceled())
+            throw new InvalidOperationException($"Cannot cancel order in {Status.Name} status. Only Placed or Confirmed orders can be canceled.");
+    }
 
     private static void ValidateOrder(Guid customerId, string currency, List<OrderItem> items)
     {

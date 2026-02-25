@@ -20,7 +20,7 @@ Correções de no fluxo de salvar dados, utilizando tracking aproveitando os cha
 
 Operação idempotente evita anomalias de concorrêcia de operação, e a forma aplicada pela IA tem riscos e gerar muitos dados desnecessários, assim preferi optar por Optimistic Concurrency Control (OCC), muito usado em casos junto com domínio com state pattern, sendo que a troca de status só é feita se o UpdateAt é o mesmo do obtido na consulta, se for diferente repete todo o processo. Nesse caso não é tão normal acontecer mais de 1 pedido de confirmação do pedido, e se acontecer vai gerar uma exceção, em casos que podem acontecer muitas exceções, pode ser aplicar a forma pessimista.
 
-#Phase5 (Planejamento)
+#Phase5
 
 Adicionado UniOfWork para melhor administracao do escopo de transacao e salvamento de mudancas
 Concentracão de regras no domínio
@@ -29,3 +29,9 @@ Separação de contextos de leitura e escrita
 Aumentar a cobertura de testes
 Testes de integração
 Simular fluxo com teste de integração com framework de containers
+
+#Phase6
+
+Remoção de eventos, pois existe um trade de execução sincrona e assincrona no fluxo de manutenção de estoque e impedimento de compra de produtos sem estoque.
+
+UnitOfWork simplificado pois transactions não são totalmente necessárias, seraparação de positórios, aumento da cobertura de testes.

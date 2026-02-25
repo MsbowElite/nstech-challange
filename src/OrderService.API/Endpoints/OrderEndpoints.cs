@@ -1,12 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using OrderService.Application.Commands;
 using OrderService.Application.DTOs;
 using OrderService.Application.Queries;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace OrderService.API.Endpoints;
 

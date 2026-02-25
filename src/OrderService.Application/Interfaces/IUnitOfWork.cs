@@ -2,21 +2,10 @@ namespace OrderService.Application.Interfaces;
 
 /// <summary>
 /// Unit of Work pattern implementation.
-/// Coordinates multiple repositories and manages a single transaction.
-/// Provides a single point of access to all repositories and transaction management.
+/// Coordinates save operations across multiple repositories and manages transactions.
 /// </summary>
 public interface IUnitOfWork : IAsyncDisposable
 {
-    /// <summary>
-    /// Gets the Order repository.
-    /// </summary>
-    IOrderRepository Orders { get; }
-
-    /// <summary>
-    /// Gets the Product repository.
-    /// </summary>
-    IProductRepository Products { get; }
-
     /// <summary>
     /// Commits all changes made to repositories in the current transaction.
     /// </summary>

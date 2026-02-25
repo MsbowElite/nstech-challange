@@ -83,18 +83,6 @@ public class OrderRepository : IOrderRepository
         _context.Orders.Update(order);
         return Task.CompletedTask;
     }
-
-    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new InvalidOperationException("Order was modified by another request. Please retry the operation.");
-        }
-    }
 }
 
 public class ProductRepository : IProductRepository
@@ -124,17 +112,5 @@ public class ProductRepository : IProductRepository
         return await _context.Products
             .Where(p => ids.Contains(p.Id))
             .ToListAsync(cancellationToken);
-    }
-
-    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new InvalidOperationException("Product was modified by another request. Please retry the operation.");
-        }
     }
 }

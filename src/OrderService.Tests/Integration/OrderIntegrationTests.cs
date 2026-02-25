@@ -1,10 +1,10 @@
-using System.Net;
-using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 using OrderService.Application.DTOs;
 using OrderService.Domain.ValueObjects;
+using System.Net;
+using System.Net.Http.Json;
 
 namespace OrderService.Tests.Integration;
 
@@ -28,7 +28,7 @@ public class OrderIntegrationTests : IntegrationTestBase
     {
         // Arrange
         await AuthenticateAsync();
-        
+
         var product = await DbContext.Products.FirstAsync();
         var initialStock = product.AvailableQuantity;
 
@@ -46,7 +46,7 @@ public class OrderIntegrationTests : IntegrationTestBase
 
         // Assert
         responseCreate.StatusCode.Should().Be(HttpStatusCode.Created);
-        
+
         var order = await responseCreate.Content.ReadFromJsonAsync<OrderResponse>();
         order.Should().NotBeNull();
         order!.CustomerId.Should().Be(_testCustomerId);
@@ -66,7 +66,7 @@ public class OrderIntegrationTests : IntegrationTestBase
     {
         // Arrange
         await AuthenticateAsync();
-        
+
         var productId = await CreateTestProductAsync("Low Stock Product", price: 49.99m, stockQuantity: 5);
 
         var createOrderRequest = new CreateOrderRequest(
@@ -83,7 +83,7 @@ public class OrderIntegrationTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        
+
         var errorContent = await response.Content.ReadAsStringAsync();
         errorContent.Should().Contain("stock");
     }
@@ -93,7 +93,7 @@ public class OrderIntegrationTests : IntegrationTestBase
     {
         // Arrange - Don't authenticate
         var product = await DbContext.Products.FirstAsync();
-        
+
         var createOrderRequest = new CreateOrderRequest(
             CustomerId: _testCustomerId,
             Currency: "USD",
@@ -115,7 +115,7 @@ public class OrderIntegrationTests : IntegrationTestBase
     {
         // Arrange
         await AuthenticateAsync();
-        
+
         var product = await DbContext.Products.FirstAsync();
         var createOrderRequest = new CreateOrderRequest(
             CustomerId: _testCustomerId,
@@ -134,7 +134,7 @@ public class OrderIntegrationTests : IntegrationTestBase
 
         // Assert
         getResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var retrievedOrder = await getResponse.Content.ReadFromJsonAsync<OrderResponse>();
         retrievedOrder.Should().NotBeNull();
         retrievedOrder!.Id.Should().Be(createdOrder.Id);
@@ -161,9 +161,9 @@ public class OrderIntegrationTests : IntegrationTestBase
         // Arrange
         await AuthenticateAsync();
         await ResetDatabaseAsync(); // Start with clean slate
-        
+
         var product = await DbContext.Products.FirstAsync();
-        
+
         // Create multiple orders
         for (int i = 0; i < 3; i++)
         {
@@ -183,7 +183,7 @@ public class OrderIntegrationTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var pagedResult = await response.Content.ReadFromJsonAsync<PagedResult<OrderResponse>>();
         pagedResult.Should().NotBeNull();
         pagedResult!.Items.Should().HaveCountGreaterThanOrEqualTo(3);
@@ -194,10 +194,10 @@ public class OrderIntegrationTests : IntegrationTestBase
     {
         // Arrange
         await AuthenticateAsync();
-        
+
         var product = await DbContext.Products.FirstAsync();
         var initialStock = product.AvailableQuantity;
-        
+
         var createOrderRequest = new CreateOrderRequest(
             CustomerId: _testCustomerId,
             Currency: "USD",
@@ -215,11 +215,11 @@ public class OrderIntegrationTests : IntegrationTestBase
 
         // Assert
         cancelResponse.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         // Verify stock was restored
         var updatedProduct = await GetProductAsync(product.Id);
         updatedProduct!.AvailableQuantity.Should().Be(initialStock);
-        
+
         // Verify order status
         var getResponse = await Client.GetAsync($"/orders/{createdOrder.Id}");
         var updatedOrder = await getResponse.Content.ReadFromJsonAsync<OrderResponse>();
@@ -231,7 +231,7 @@ public class OrderIntegrationTests : IntegrationTestBase
     {
         // Arrange
         await AuthenticateAsync();
-        
+
         var products = await DbContext.Products.Take(3).ToListAsync();
 
         var createOrderRequest = new CreateOrderRequest(
@@ -245,15 +245,15 @@ public class OrderIntegrationTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.Created);
-        
+
         var order = await response.Content.ReadFromJsonAsync<OrderResponse>();
         order.Should().NotBeNull();
         order!.Items.Should().HaveCount(3);
-        
+
         // Verify total is calculated correctly
         var expectedTotal = products.Sum(p => p.UnitPrice * 2);
         order.Total.Should().Be(expectedTotal);
-        
+
         // Verify each product stock was reduced
         foreach (var item in order.Items)
         {
@@ -287,11 +287,11 @@ public class OrderIntegrationTests : IntegrationTestBase
         // Arrange
         await AuthenticateAsync();
         await ResetDatabaseAsync();
-        
+
         var product = await DbContext.Products.FirstAsync();
         var customerId1 = Guid.NewGuid();
         var customerId2 = Guid.NewGuid();
-        
+
         // Create orders for customer 1
         for (int i = 0; i < 2; i++)
         {
@@ -301,7 +301,7 @@ public class OrderIntegrationTests : IntegrationTestBase
                 Items: new List<OrderItemRequest> { new OrderItemRequest(product.Id, 1) }
             ));
         }
-        
+
         // Create order for customer 2
         await Client.PostAsJsonAsync("/orders", new CreateOrderRequest(
             CustomerId: customerId2,
@@ -314,7 +314,7 @@ public class OrderIntegrationTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var pagedResult = await response.Content.ReadFromJsonAsync<PagedResult<OrderResponse>>();
         pagedResult.Should().NotBeNull();
         pagedResult!.Items.Should().HaveCount(2);

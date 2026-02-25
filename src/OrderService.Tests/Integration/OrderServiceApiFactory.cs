@@ -85,7 +85,7 @@ public class OrderServiceApiFactory : WebApplicationFactory<Program>
     {
         using var scope = Services.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<OrderDbContext>();
-        
+
         // Clear all data
         context.Orders.RemoveRange(context.Orders);
         context.Products.RemoveRange(context.Products);

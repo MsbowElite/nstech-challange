@@ -19,7 +19,6 @@ public interface IOrderRepository
         CancellationToken cancellationToken = default);
     Task<Order> AddAsync(Order order, CancellationToken cancellationToken = default);
     Task UpdateAsync(Order order, CancellationToken cancellationToken = default);
-    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -30,5 +29,4 @@ public interface IProductRepository
     Task<Product?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<List<Product>> GetByIdsAsync(List<Guid> ids, CancellationToken cancellationToken = default);
     Task<List<Product>> GetByIdsForUpdateAsync(List<Guid> ids, CancellationToken cancellationToken = default);
-    Task SaveChangesAsync(CancellationToken cancellationToken = default);
 }
