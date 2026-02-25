@@ -3,29 +3,21 @@ using OrderService.Application.Commands;
 using OrderService.Application.DTOs;
 using OrderService.Application.Interfaces;
 using OrderService.Application.Mappers;
-using OrderService.Domain.Services;
 
 namespace OrderService.Application.Commands.Handlers;
 
 /// <summary>
 /// Handler for canceling orders.
 /// Uses Unit of Work to coordinate transactional operations.
-/// Validates order state using domain service, releases reserved stock, and publishes domain events.
+/// Validates order state and releases reserved stock.
 /// </summary>
 public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, OrderResponse>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly OrderDomainService _domainService;
-    private readonly IPublisher _publisher;
 
-    public CancelOrderCommandHandler(
-        IUnitOfWork unitOfWork,
-        OrderDomainService domainService,
-        IPublisher publisher)
+    public CancelOrderCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _domainService = domainService;
-        _publisher = publisher;
     }
 
     public async Task<OrderResponse> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
@@ -38,8 +30,8 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Ord
             if (order == null)
                 throw new InvalidOperationException($"Order {request.OrderId} not found");
 
-            // Use domain service to validate business rules
-            if (!_domainService.CanCancelOrder(order))
+            // Validate business rules
+            if (!order.CanBeCanceled())
                 throw new InvalidOperationException($"Cannot cancel order in {order.Status.Name} status. Only Placed or Confirmed orders can be canceled.");
 
             // Only release stock if order was confirmed
@@ -58,19 +50,11 @@ public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, Ord
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
             }
 
-            // Cancel the order - this will raise domain events
+            // Cancel the order
             order.Cancel("Canceled by user request");
             
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
-
-            // Publish domain events
-            var events = order.GetUncommittedEvents();
-            foreach (var evt in events)
-            {
-                await _publisher.Publish(evt, cancellationToken);
-            }
-            order.ClearUncommittedEvents();
 
             return OrderMapper.MapToResponse(order);
         }

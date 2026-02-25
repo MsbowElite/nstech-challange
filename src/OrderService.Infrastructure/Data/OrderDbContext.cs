@@ -65,6 +65,9 @@ public class OrderDbContext : DbContext
             entity.Property(p => p.UnitPrice).IsRequired().HasColumnType("decimal(18,2)");
             entity.Property(p => p.AvailableQuantity).IsRequired();
             entity.Property(p => p.CreatedAt).IsRequired();
+
+            // Enable optimistic concurrency control with UpdatedAt
+            entity.Property(o => o.UpdatedAt).IsConcurrencyToken();
         });
 
     }

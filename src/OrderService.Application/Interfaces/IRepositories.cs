@@ -1,17 +1,14 @@
 using OrderService.Domain.Entities;
-using OrderService.Domain.Specifications;
 
 namespace OrderService.Application.Interfaces;
 
 /// <summary>
 /// Repository interface for Order aggregate operations.
-/// Supports both direct queries and specification-based queries.
 /// </summary>
 public interface IOrderRepository
 {
     Task<Order?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<Order?> GetByIdForUpdateAsync(Guid id, CancellationToken cancellationToken = default);
-    Task<Order?> GetBySpecificationAsync(Specification<Order> spec, CancellationToken cancellationToken = default);
     Task<(List<Order> Orders, int TotalCount)> GetPagedAsync(
         Guid? customerId,
         string? status,

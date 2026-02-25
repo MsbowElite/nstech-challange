@@ -11,17 +11,15 @@ namespace OrderService.Application.Commands.Handlers;
 /// <summary>
 /// Handler for creating new orders.
 /// Uses Unit of Work to coordinate product validation and order persistence.
-/// Validates products, creates the order aggregate, and publishes domain events.
+/// Validates products and creates the order aggregate.
 /// </summary>
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, OrderResponse>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IPublisher _publisher;
 
-    public CreateOrderCommandHandler(IUnitOfWork unitOfWork, IPublisher publisher)
+    public CreateOrderCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _publisher = publisher;
     }
 
     public async Task<OrderResponse> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -52,20 +50,12 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
             orderItems.Add(new OrderItem(product.Id, product.UnitPrice, item.Quantity));
         }
 
-        // Create the order aggregate - this will raise domain events
+        // Create the order aggregate
         var order = new Order(req.CustomerId, req.Currency, orderItems);
         
         // Persist the order through Unit of Work
         await _unitOfWork.Orders.AddAsync(order, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-        // Publish domain events to notify other services (e.g., Inventory, Notification, etc.)
-        var events = order.GetUncommittedEvents();
-        foreach (var evt in events)
-        {
-            await _publisher.Publish(evt, cancellationToken);
-        }
-        order.ClearUncommittedEvents();
 
         return OrderMapper.MapToResponse(order);
     }

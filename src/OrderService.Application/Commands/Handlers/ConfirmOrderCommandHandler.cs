@@ -3,29 +3,21 @@ using OrderService.Application.Commands;
 using OrderService.Application.DTOs;
 using OrderService.Application.Interfaces;
 using OrderService.Application.Mappers;
-using OrderService.Domain.Services;
 
 namespace OrderService.Application.Commands.Handlers;
 
 /// <summary>
 /// Handler for confirming orders.
 /// Uses Unit of Work to coordinate transactional operations.
-/// Validates order state using domain service, reserves stock, and publishes domain events.
+/// Validates order state and reserves stock.
 /// </summary>
 public class ConfirmOrderCommandHandler : IRequestHandler<ConfirmOrderCommand, OrderResponse>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly OrderDomainService _domainService;
-    private readonly IPublisher _publisher;
 
-    public ConfirmOrderCommandHandler(
-        IUnitOfWork unitOfWork,
-        OrderDomainService domainService,
-        IPublisher publisher)
+    public ConfirmOrderCommandHandler(IUnitOfWork unitOfWork)
     {
         _unitOfWork = unitOfWork;
-        _domainService = domainService;
-        _publisher = publisher;
     }
 
     public async Task<OrderResponse> Handle(ConfirmOrderCommand request, CancellationToken cancellationToken)
@@ -38,8 +30,8 @@ public class ConfirmOrderCommandHandler : IRequestHandler<ConfirmOrderCommand, O
             if (order == null)
                 throw new InvalidOperationException($"Order {request.OrderId} not found");
 
-            // Use domain service to validate business rules
-            if (!_domainService.CanConfirmOrder(order))
+            // Validate business rules
+            if (!order.CanBeConfirmed())
                 throw new InvalidOperationException($"Cannot confirm order in {order.Status.Name} status. Only Placed orders can be confirmed.");
 
             var productIds = order.Items.Select(i => i.ProductId).ToList();
@@ -51,19 +43,11 @@ public class ConfirmOrderCommandHandler : IRequestHandler<ConfirmOrderCommand, O
                 product.ReserveStock(item.Quantity);
             }
 
-            // Confirm the order - this will raise domain events
+            // Confirm the order
             order.Confirm();
             
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             await _unitOfWork.CommitAsync(cancellationToken);
-
-            // Publish domain events
-            var events = order.GetUncommittedEvents();
-            foreach (var evt in events)
-            {
-                await _publisher.Publish(evt, cancellationToken);
-            }
-            order.ClearUncommittedEvents();
 
             return OrderMapper.MapToResponse(order);
         }

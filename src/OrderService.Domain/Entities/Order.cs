@@ -1,5 +1,3 @@
-using OrderService.Domain.Events;
-using OrderService.Domain.Interfaces;
 using OrderService.Domain.ValueObjects;
 
 namespace OrderService.Domain.Entities;
@@ -7,9 +5,8 @@ namespace OrderService.Domain.Entities;
 /// <summary>
 /// Order aggregate root.
 /// Represents a customer's order containing multiple items.
-/// Implements the aggregate root pattern and raises domain events to notify interested parties of changes.
 /// </summary>
-public class Order : IAggregateRoot
+public class Order
 {
     public Guid Id { get; private set; }
     public Guid CustomerId { get; private set; }
@@ -20,8 +17,6 @@ public class Order : IAggregateRoot
 
     private readonly List<OrderItem> _items = new();
     public IReadOnlyCollection<OrderItem> Items => _items.AsReadOnly();
-
-    private readonly List<DomainEvent> _uncommittedEvents = new();
 
     public decimal Total => _items.Sum(item => item.Subtotal);
 
@@ -40,9 +35,6 @@ public class Order : IAggregateRoot
         Status = OrderStatus.Placed;
         _items = items;
         CreatedAt = DateTime.UtcNow;
-
-        // Raise domain event
-        _uncommittedEvents.Add(new OrderCreatedEvent(Id, CustomerId, Currency, Total, CreatedAt));
     }
 
     /// <summary>
@@ -56,9 +48,6 @@ public class Order : IAggregateRoot
 
         Status = OrderStatus.Confirmed;
         UpdatedAt = DateTime.UtcNow;
-
-        // Raise domain event
-        _uncommittedEvents.Add(new OrderConfirmedEvent(Id, CustomerId, UpdatedAt.Value));
     }
 
     /// <summary>
@@ -72,9 +61,6 @@ public class Order : IAggregateRoot
 
         Status = OrderStatus.Canceled;
         UpdatedAt = DateTime.UtcNow;
-
-        // Raise domain event
-        _uncommittedEvents.Add(new OrderCanceledEvent(Id, CustomerId, UpdatedAt.Value, reason));
     }
 
     /// <summary>
@@ -101,16 +87,6 @@ public class Order : IAggregateRoot
     /// Query method: checks if order can transition to canceled state.
     /// </summary>
     public bool CanBeCanceled() => Status.CanTransitionToCanceled();
-
-    /// <summary>
-    /// Gets all uncommitted domain events that were raised by this aggregate.
-    /// </summary>
-    public IReadOnlyCollection<DomainEvent> GetUncommittedEvents() => _uncommittedEvents.AsReadOnly();
-
-    /// <summary>
-    /// Clears all uncommitted domain events after they have been processed/persisted.
-    /// </summary>
-    public void ClearUncommittedEvents() => _uncommittedEvents.Clear();
 
     private static void ValidateOrder(Guid customerId, string currency, List<OrderItem> items)
     {

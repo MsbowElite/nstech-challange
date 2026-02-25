@@ -43,9 +43,6 @@ builder.Services.AddScoped<IUnitOfWork, OrderService.Infrastructure.UnitOfWork.U
 builder.Services.AddScoped(sp => sp.GetRequiredService<IUnitOfWork>().Orders);
 builder.Services.AddScoped(sp => sp.GetRequiredService<IUnitOfWork>().Products);
 
-// Add Domain Services
-builder.Services.AddScoped<OrderService.Domain.Services.OrderDomainService>();
-
 // Add JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsASecretKeyForDevelopmentOnlyDoNotUseInProduction123456";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "OrderServiceAPI";
