@@ -1,36 +1,23 @@
 using Microsoft.EntityFrameworkCore.Storage;
 using OrderService.Application.Interfaces;
 using OrderService.Infrastructure.Data;
-using OrderService.Infrastructure.Repositories;
 
 namespace OrderService.Infrastructure.UnitOfWork;
 
 /// <summary>
 /// Implementation of the Unit of Work pattern.
-/// Manages the DbContext and coordinates all repositories within a single transaction scope.
+/// Manages the DbContext and coordinates save operations across repositories.
 /// Provides explicit transaction management with commit/rollback semantics.
 /// </summary>
 public class UnitOfWork : IUnitOfWork
 {
     private readonly OrderDbContext _context;
     private IDbContextTransaction? _transaction;
-    private IOrderRepository? _orderRepository;
-    private IProductRepository? _productRepository;
 
     public UnitOfWork(OrderDbContext context)
     {
         _context = context;
     }
-
-    /// <summary>
-    /// Gets or creates the Order repository (lazy initialization).
-    /// </summary>
-    public IOrderRepository Orders => _orderRepository ??= new OrderRepository(_context);
-
-    /// <summary>
-    /// Gets or creates the Product repository (lazy initialization).
-    /// </summary>
-    public IProductRepository Products => _productRepository ??= new ProductRepository(_context);
 
     /// <summary>
     /// Saves all changes made to the DbContext.

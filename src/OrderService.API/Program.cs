@@ -12,7 +12,6 @@ using OrderService.Application.Validators;
 using OrderService.Infrastructure;
 using OrderService.Infrastructure.Data;
 using OrderService.Infrastructure.Repositories;
-using OrderService.Infrastructure.UnitOfWork;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,23 +27,18 @@ builder.Services.AddScoped<IOrderDbContextReadOnly, OrderDbContextReadOnly>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateOrderCommandValidator>();
 
 // Add MediatR with validation behavior
-builder.Services.AddMediatR(cfg => {
+builder.Services.AddMediatR(cfg =>
+{
     cfg.RegisterServicesFromAssembly(typeof(CreateOrderCommandHandler).Assembly);
     cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
 });
 
-// Add DbContext (required by Unit of Work and repositories)
-// Note: AddDbContext is already called above in the file
-
-// Add Unit of Work (coordinates all repositories and transaction management)
+// Add Unit of Work (coordinates save operations only)
 builder.Services.AddScoped<IUnitOfWork, OrderService.Infrastructure.UnitOfWork.UnitOfWork>();
 
-// Add Repositories for query handlers (they don't participate in UnitOfWork transactions)
-builder.Services.AddScoped(sp => sp.GetRequiredService<IUnitOfWork>().Orders);
-builder.Services.AddScoped(sp => sp.GetRequiredService<IUnitOfWork>().Products);
-
-// Add Domain Services
-builder.Services.AddScoped<OrderService.Domain.Services.OrderDomainService>();
+// Add Repositories (injected independently)
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 // Add JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsASecretKeyForDevelopmentOnlyDoNotUseInProduction123456";
@@ -72,9 +66,9 @@ builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo 
-    { 
-        Title = "Order Service API Test", 
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Order Service API Test",
         Version = "v1.1",
         Description = "A REST API for managing orders with stock validation (Minimal API)"
     });

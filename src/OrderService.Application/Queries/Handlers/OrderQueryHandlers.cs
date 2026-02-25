@@ -3,7 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using OrderService.Application.DTOs;
 using OrderService.Application.Interfaces;
 using OrderService.Application.Mappers;
-using OrderService.Application.Queries;
 
 namespace OrderService.Application.Queries.Handlers;
 
@@ -26,7 +25,7 @@ public class GetOrderByIdQueryHandler : IRequestHandler<GetOrderByIdQuery, Order
         var order = await _context.Orders
             .Where(o => o.Id == request.OrderId)
             .FirstOrDefaultAsync(cancellationToken);
-        
+
         if (order == null)
             return null;
 
@@ -50,7 +49,7 @@ public class GetOrdersQueryHandler : IRequestHandler<GetOrdersQuery, PagedResult
     public async Task<PagedResult<OrderResponse>> Handle(GetOrdersQuery request, CancellationToken cancellationToken)
     {
         var query = request.Query;
-        
+
         // Build query with AsNoTracking for optimal performance
         var baseQuery = _context.Orders;
 

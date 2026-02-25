@@ -1,5 +1,4 @@
 using MediatR;
-using OrderService.Application.Commands;
 using OrderService.Application.DTOs;
 using OrderService.Application.Interfaces;
 using OrderService.Application.Mappers;
@@ -10,18 +9,23 @@ namespace OrderService.Application.Commands.Handlers;
 
 /// <summary>
 /// Handler for creating new orders.
-/// Uses Unit of Work to coordinate product validation and order persistence.
-/// Validates products, creates the order aggregate, and publishes domain events.
+/// Uses separate repositories and Unit of Work for save coordination.
+/// Validates products and creates the order aggregate.
 /// </summary>
 public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, OrderResponse>
 {
+    private readonly IOrderRepository _orderRepository;
+    private readonly IProductRepository _productRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IPublisher _publisher;
 
-    public CreateOrderCommandHandler(IUnitOfWork unitOfWork, IPublisher publisher)
+    public CreateOrderCommandHandler(
+        IOrderRepository orderRepository,
+        IProductRepository productRepository,
+        IUnitOfWork unitOfWork)
     {
+        _orderRepository = orderRepository;
+        _productRepository = productRepository;
         _unitOfWork = unitOfWork;
-        _publisher = publisher;
     }
 
     public async Task<OrderResponse> Handle(CreateOrderCommand request, CancellationToken cancellationToken)
@@ -30,7 +34,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
 
         // Validate products exist and have sufficient stock
         var productIds = req.Items.Select(i => i.ProductId).ToList();
-        var products = await _unitOfWork.Products.GetByIdsAsync(productIds, cancellationToken);
+        var products = await _productRepository.GetByIdsAsync(productIds, cancellationToken);
 
         if (products.Count != productIds.Distinct().Count())
         {
@@ -42,7 +46,7 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
         foreach (var item in req.Items)
         {
             var product = products.First(p => p.Id == item.ProductId);
-            
+
             if (product.AvailableQuantity < item.Quantity)
             {
                 throw new InvalidOperationException(
@@ -52,20 +56,12 @@ public class CreateOrderCommandHandler : IRequestHandler<CreateOrderCommand, Ord
             orderItems.Add(new OrderItem(product.Id, product.UnitPrice, item.Quantity));
         }
 
-        // Create the order aggregate - this will raise domain events
+        // Create the order aggregate
         var order = new Order(req.CustomerId, req.Currency, orderItems);
-        
-        // Persist the order through Unit of Work
-        await _unitOfWork.Orders.AddAsync(order, cancellationToken);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        // Publish domain events to notify other services (e.g., Inventory, Notification, etc.)
-        var events = order.GetUncommittedEvents();
-        foreach (var evt in events)
-        {
-            await _publisher.Publish(evt, cancellationToken);
-        }
-        order.ClearUncommittedEvents();
+        // Persist the order through repository
+        await _orderRepository.AddAsync(order, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return OrderMapper.MapToResponse(order);
     }

@@ -1,0 +1,45 @@
+using FluentAssertions;
+using FluentValidation.TestHelper;
+using NUnit.Framework;
+using OrderService.Application.Commands;
+using OrderService.Application.Validators;
+
+namespace OrderService.Tests.Application.Validators;
+
+[TestFixture]
+public class CancelOrderCommandValidatorTests
+{
+    private CancelOrderCommandValidator _validator = null!;
+
+    [SetUp]
+    public void SetUp()
+    {
+        _validator = new CancelOrderCommandValidator();
+    }
+
+    [Test]
+    public void Validate_WithValidOrderId_ShouldPass()
+    {
+        // Arrange
+        var command = new CancelOrderCommand(Guid.NewGuid(), "test-key");
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldNotHaveAnyValidationErrors();
+    }
+
+    [Test]
+    public void Validate_WithEmptyOrderId_ShouldFail()
+    {
+        // Arrange
+        var command = new CancelOrderCommand(Guid.Empty, "test-key");
+
+        // Act
+        var result = _validator.TestValidate(command);
+
+        // Assert
+        result.ShouldHaveValidationErrorFor(x => x.OrderId);
+    }
+}

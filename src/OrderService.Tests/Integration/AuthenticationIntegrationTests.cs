@@ -1,7 +1,7 @@
-using System.Net;
-using System.Net.Http.Json;
 using FluentAssertions;
 using NUnit.Framework;
+using System.Net;
+using System.Net.Http.Json;
 
 namespace OrderService.Tests.Integration;
 
@@ -26,7 +26,7 @@ public class AuthenticationIntegrationTests : IntegrationTestBase
 
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
-        
+
         var result = await response.Content.ReadFromJsonAsync<TokenResponse>();
         result.Should().NotBeNull();
         result!.AccessToken.Should().NotBeNullOrEmpty();
@@ -82,7 +82,7 @@ public class AuthenticationIntegrationTests : IntegrationTestBase
         // Assert
         var token1 = await response1.Content.ReadFromJsonAsync<TokenResponse>();
         var token2 = await response2.Content.ReadFromJsonAsync<TokenResponse>();
-        
+
         token1!.AccessToken.Should().NotBe(token2!.AccessToken);
     }
 
@@ -115,7 +115,7 @@ public class AuthenticationIntegrationTests : IntegrationTestBase
     public async Task AccessProtectedEndpoint_WithInvalidToken_ShouldReturnUnauthorized()
     {
         // Arrange
-        Client.DefaultRequestHeaders.Authorization = 
+        Client.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "invalid.token.here");
 
         // Act

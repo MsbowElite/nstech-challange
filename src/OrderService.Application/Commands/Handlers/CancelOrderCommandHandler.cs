@@ -1,83 +1,76 @@
 using MediatR;
-using OrderService.Application.Commands;
+using Microsoft.EntityFrameworkCore;
 using OrderService.Application.DTOs;
 using OrderService.Application.Interfaces;
 using OrderService.Application.Mappers;
-using OrderService.Domain.Services;
 
 namespace OrderService.Application.Commands.Handlers;
 
 /// <summary>
 /// Handler for canceling orders.
-/// Uses Unit of Work to coordinate transactional operations.
-/// Validates order state using domain service, releases reserved stock, and publishes domain events.
+/// Uses separate repositories and Unit of Work for transaction coordination.
+/// Validates order state and releases reserved stock.
 /// </summary>
 public class CancelOrderCommandHandler : IRequestHandler<CancelOrderCommand, OrderResponse>
 {
+    private readonly IOrderRepository _orderRepository;
+    private readonly IProductRepository _productRepository;
     private readonly IUnitOfWork _unitOfWork;
-    private readonly OrderDomainService _domainService;
-    private readonly IPublisher _publisher;
+    private const int MaxRetries = 3;
 
     public CancelOrderCommandHandler(
-        IUnitOfWork unitOfWork,
-        OrderDomainService domainService,
-        IPublisher publisher)
+        IOrderRepository orderRepository,
+        IProductRepository productRepository,
+        IUnitOfWork unitOfWork)
     {
+        _orderRepository = orderRepository;
+        _productRepository = productRepository;
         _unitOfWork = unitOfWork;
-        _domainService = domainService;
-        _publisher = publisher;
     }
 
     public async Task<OrderResponse> Handle(CancelOrderCommand request, CancellationToken cancellationToken)
     {
-        await _unitOfWork.BeginTransactionAsync(cancellationToken);
-
-        try
+        int retryCount = 0;
+        while (true)
         {
-            var order = await _unitOfWork.Orders.GetByIdForUpdateAsync(request.OrderId, cancellationToken);
-            if (order == null)
-                throw new InvalidOperationException($"Order {request.OrderId} not found");
-
-            // Use domain service to validate business rules
-            if (!_domainService.CanCancelOrder(order))
-                throw new InvalidOperationException($"Cannot cancel order in {order.Status.Name} status. Only Placed or Confirmed orders can be canceled.");
-
-            // Only release stock if order was confirmed
-            if (order.IsConfirmed())
+            try
             {
-                // Release stock
-                var productIds = order.Items.Select(i => i.ProductId).ToList();
-                var products = await _unitOfWork.Products.GetByIdsForUpdateAsync(productIds, cancellationToken);
+                var order = await _orderRepository.GetByIdForUpdateAsync(request.OrderId, cancellationToken);
+                if (order == null)
+                    throw new InvalidOperationException($"Order {request.OrderId} not found");
 
-                foreach (var item in order.Items)
+                order.Cancellable();
+
+                // Only release stock if order was confirmed
+                if (order.IsConfirmed())
                 {
-                    var product = products.First(p => p.Id == item.ProductId);
-                    product.ReleaseStock(item.Quantity);
+                    // Release stock
+                    var productIds = order.Items.Select(i => i.ProductId).ToList();
+                    var products = await _productRepository.GetByIdsForUpdateAsync(productIds, cancellationToken);
+
+                    foreach (var item in order.Items)
+                    {
+                        var product = products.First(p => p.Id == item.ProductId);
+                        product.ReleaseStock(item.Quantity);
+                    }
+
+                    await _unitOfWork.SaveChangesAsync(cancellationToken);
                 }
 
+                // Cancel the order
+                order.Cancel("Canceled by user request");
+
                 await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+                return OrderMapper.MapToResponse(order);
             }
-
-            // Cancel the order - this will raise domain events
-            order.Cancel("Canceled by user request");
-            
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await _unitOfWork.CommitAsync(cancellationToken);
-
-            // Publish domain events
-            var events = order.GetUncommittedEvents();
-            foreach (var evt in events)
+            catch (DbUpdateConcurrencyException) when (retryCount < MaxRetries)
             {
-                await _publisher.Publish(evt, cancellationToken);
+                retryCount++;
+                // Wait a bit before retrying to reduce contention
+                await Task.Delay(50 * retryCount, cancellationToken);
+                // Context will reload entities on next iteration
             }
-            order.ClearUncommittedEvents();
-
-            return OrderMapper.MapToResponse(order);
-        }
-        catch
-        {
-            await _unitOfWork.RollbackAsync(cancellationToken);
-            throw;
         }
     }
 }

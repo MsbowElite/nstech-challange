@@ -25,12 +25,12 @@ public class CorrelationIdMiddleware
             ["CorrelationId"] = correlationId
         }))
         {
-            _logger.LogInformation("Request started: {Method} {Path}", 
+            _logger.LogInformation("Request started: {Method} {Path}",
                 context.Request.Method, context.Request.Path);
 
             await _next(context);
 
-            _logger.LogInformation("Request completed: {Method} {Path} - {StatusCode}", 
+            _logger.LogInformation("Request completed: {Method} {Path} - {StatusCode}",
                 context.Request.Method, context.Request.Path, context.Response.StatusCode);
         }
     }

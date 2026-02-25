@@ -1,11 +1,8 @@
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
-using System.Text;
-using FluentAssertions;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using OrderService.Domain.Entities;
 using OrderService.Infrastructure.Data;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace OrderService.Tests.Integration;
 
@@ -24,7 +21,7 @@ public abstract class IntegrationTestBase
     {
         Factory = new OrderServiceApiFactory();
         await Factory.StartAsync();
-        
+
         Client = Factory.CreateClient();
         ClientNoAuth = Factory.CreateClient();
         DbContext = Factory.GetDbContext();
@@ -78,7 +75,7 @@ public abstract class IntegrationTestBase
 
         var response = await Client.PostAsJsonAsync("/auth/token", tokenRequest);
         response.EnsureSuccessStatusCode();
-        
+
         var result = await response.Content.ReadFromJsonAsync<TokenResponse>();
         return result?.AccessToken ?? throw new InvalidOperationException("Failed to get auth token");
     }
@@ -118,7 +115,7 @@ public abstract class IntegrationTestBase
     protected async Task ResetDatabaseAsync()
     {
         await Factory.ResetDatabaseAsync();
-        
+
         // Re-seed test data
         await SeedTestDataAsync();
     }

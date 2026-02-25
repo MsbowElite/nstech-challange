@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using OrderService.Application.Interfaces;
 using OrderService.Domain.Entities;
-using OrderService.Domain.Specifications;
 using OrderService.Domain.ValueObjects;
 using OrderService.Infrastructure.Data;
 
@@ -27,39 +26,6 @@ public class OrderRepository : IOrderRepository
     {
         return await _context.Orders
             .FirstOrDefaultAsync(o => o.Id == id, cancellationToken);
-    }
-
-    public async Task<Order?> GetBySpecificationAsync(Specification<Order> spec, CancellationToken cancellationToken = default)
-    {
-        var query = _context.Orders.AsQueryable();
-
-        // Apply filtering criteria
-        if (spec.Criteria != null)
-            query = query.Where(spec.Criteria);
-
-        // Apply string includes (relationships)
-        query = spec.IncludeStrings.Aggregate(query, (current, include) => current.Include(include));
-
-        // Apply expression includes (relationships)
-        query = spec.Includes.Aggregate(query, (current, include) => current.Include(include));
-
-        // Apply ordering
-        if (spec.OrderBy != null)
-            query = query.OrderBy(spec.OrderBy);
-        else if (spec.OrderByDescending != null)
-            query = query.OrderByDescending(spec.OrderByDescending);
-
-        // Apply paging
-        if (spec.IsPagingEnabled)
-        {
-            if (spec.Skip.HasValue)
-                query = query.Skip(spec.Skip.Value);
-
-            if (spec.Take.HasValue)
-                query = query.Take(spec.Take.Value);
-        }
-
-        return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<(List<Order> Orders, int TotalCount)> GetPagedAsync(
@@ -117,18 +83,6 @@ public class OrderRepository : IOrderRepository
         _context.Orders.Update(order);
         return Task.CompletedTask;
     }
-
-    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new InvalidOperationException("Order was modified by another request. Please retry the operation.");
-        }
-    }
 }
 
 public class ProductRepository : IProductRepository
@@ -158,17 +112,5 @@ public class ProductRepository : IProductRepository
         return await _context.Products
             .Where(p => ids.Contains(p.Id))
             .ToListAsync(cancellationToken);
-    }
-
-    public async Task SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            await _context.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            throw new InvalidOperationException("Product was modified by another request. Please retry the operation.");
-        }
     }
 }
